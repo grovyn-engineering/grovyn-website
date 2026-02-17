@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Phone, MapPin, Clock, Linkedin, Twitter } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Linkedin, Twitter, Instagram } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const SOCIAL_LINKS = [
   { label: "LinkedIn", href: "https://www.linkedin.com/company/grovynsystems/about", icon: Linkedin },
-  { label: "Twitter", href: "https://twitter.com/grovynsystems", icon: Twitter },
+  { label: "Twitter", href: "https://twitter.com/buildwithgrovyn", icon: Twitter },
+  { label: "Instagram", href: "https://www.instagram.com/buildwithgrovyn/", icon: Instagram },
 ] as const;
 
 export default function Footer({ locale }: { locale: string }) {
@@ -21,9 +22,9 @@ export default function Footer({ locale }: { locale: string }) {
               <Image
                 src="/grovyn_logo.png"
                 alt="Grovyn"
-                width={120}
+                width={80}
                 height={40}
-                sizes="120px"
+                sizes="80px"
                 className="object-contain h-8 w-auto"
                 style={{ width: "auto", height: "auto" }}
               />
@@ -44,7 +45,7 @@ export default function Footer({ locale }: { locale: string }) {
               <div className="flex items-center space-x-3 text-[11px] font-medium group">
                 <Phone size={14} className="text-emerald-500 shrink-0" />
                 <a href="tel:+917354972920" className="hover:text-white transition-colors">
-                  +91 73549 72920
+                  +91 7354972920
                 </a>
               </div>
               <div className="flex items-center space-x-3 text-[11px] font-medium group">
@@ -89,11 +90,11 @@ export default function Footer({ locale }: { locale: string }) {
                     {t("mobile_eng")}
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link href={`${base}/portfolio`} className="hover:text-emerald-500 transition-colors">
                     {t("ui_ux")}
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link href={`${base}/infrastructure/cloud`} className="hover:text-emerald-500 transition-colors">
                     {t("cloud_arch")}
@@ -120,18 +121,22 @@ export default function Footer({ locale }: { locale: string }) {
                     {t("careers")}
                   </Link>
                 </li>
-
+                <li>
+                  <Link href={`${base}/portfolio`} className="hover:text-emerald-500 transition-colors">
+                    {t("portfolio")}
+                  </Link>
+                </li>
+                <li>
+                  <Link href={`${base}/blog`} className="hover:text-emerald-500 transition-colors">
+                    {t("blog")}
+                  </Link>
+                </li>
               </ul>
             </div>
 
             <div>
               <h5 className="text-white text-sm font-bold mb-6">{t("resources_heading")}</h5>
               <ul className="text-xs space-y-4">
-                <li>
-                  <Link href={`${base}/blog`} className="hover:text-emerald-500 transition-colors">
-                    {t("blog")}
-                  </Link>
-                </li>
                 <li>
                   <Link href={`${base}#contact`} className="hover:text-emerald-500 transition-colors">
                     {t("contact")}
@@ -147,7 +152,7 @@ export default function Footer({ locale }: { locale: string }) {
                     {t("terms")}
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <a
                     href="https://www.linkedin.com/company/grovynsystems/about"
                     target="_blank"
@@ -156,7 +161,7 @@ export default function Footer({ locale }: { locale: string }) {
                   >
                     {t("linkedin")}
                   </a>
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>

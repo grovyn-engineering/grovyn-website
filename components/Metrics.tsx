@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function Metrics() {
+  const locale = useLocale();
   const t = useTranslations("metrics");
 
   return (
@@ -110,7 +111,7 @@ export default function Metrics() {
               </p>
             </div>
             <Link
-              href="#contact"
+              href={`/${locale}#contact`}
               className="w-full bg-black text-white px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl flex justify-between items-center text-xs sm:text-sm font-bold group hover:bg-[#10b981] transition-colors mt-auto"
             >
               <span>{t("get_quote")}</span>

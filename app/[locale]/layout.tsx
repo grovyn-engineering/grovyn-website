@@ -5,6 +5,7 @@ import { locales, isRtl } from "@/i18n/config";
 import IntlErrorHandlingProvider from "@/components/IntlErrorHandlingProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import HashScroll from "@/components/HashScroll";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import CookieBanner from "@/components/CookieBanner";
 import StructuredData from "@/components/StructuredData";
@@ -49,6 +50,7 @@ export default async function LocaleLayout({
         )}
         <StructuredData />
         <IntlErrorHandlingProvider locale={locale} messages={messages}>
+          <HashScroll />
           <Navbar />
           <main className="min-h-screen flex flex-col" style={{ paddingTop: "5rem" }}>
             {children}

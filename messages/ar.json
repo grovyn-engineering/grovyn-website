@@ -375,6 +375,7 @@
     "connect": "Connect",
     "about": "About",
     "careers": "Careers",
+    "portfolio": "Portfolio",
     "blog": "Blog",
     "contact": "Contact",
     "privacy": "Privacy",
@@ -443,7 +444,7 @@
     "projects_shipped": "مشاريع منجزة",
     "commitment_para_1": "نحن ملتزمون بـ",
     "commitment_para_2": "صناعة SaaS",
-    "commitment_para_3": "بحلول مبتكرة ومستدامة—بدمج",
+    "commitment_para_3": "بحلول مبتكرة ومستدامة-بدمج",
     "commitment_para_4": "أحدث التقنيات",
     "commitment_para_5": "لتحقيق الرؤى.",
     "stat_projects_delivered": "مشاريع منجزة",
@@ -555,7 +556,7 @@
     "open_roles_title": "الوظائف المفتوحة",
     "open_roles_count": "{count} وظائف مفتوحة",
     "no_open_roles_title": "لا توجد وظائف مفتوحة",
-    "no_open_roles_message": "تفقدنا لاحقاً أو تواصل معنا—نود أن نسمع منك.",
+    "no_open_roles_message": "تفقدنا لاحقاً أو تواصل معنا-نود أن نسمع منك.",
     "filter_by": "تصفية",
     "filter_all_locations": "جميع المواقع",
     "filter_all_types": "جميع الأنواع",
@@ -743,6 +744,7 @@
         "title": "Mobile Development",
         "items": [
           "React Native",
+          "Ionic/Capacitor",
           "Flutter",
           "Android",
           "iOS"
