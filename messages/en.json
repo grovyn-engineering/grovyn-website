@@ -377,6 +377,7 @@
     "connect": "Connect",
     "about": "About",
     "careers": "Careers",
+    "portfolio": "Portfolio",
     "blog": "Blog",
     "contact": "Contact",
     "privacy": "Privacy",
@@ -445,7 +446,7 @@
     "projects_shipped": "Projects shipped",
     "commitment_para_1": "We are committed to the",
     "commitment_para_2": "SaaS industry",
-    "commitment_para_3": "with innovative, sustainable solutions—combining",
+    "commitment_para_3": "with innovative, sustainable solutions-combining",
     "commitment_para_4": "state-of-the-art technology",
     "commitment_para_5": "to bring visions to life.",
     "stat_projects_delivered": "Projects Delivered",
@@ -557,7 +558,7 @@
     "open_roles_title": "Open positions",
     "open_roles_count": "{count} open roles",
     "no_open_roles_title": "No open roles",
-    "no_open_roles_message": "Check back later or get in touch—we'd love to hear from you.",
+    "no_open_roles_message": "Check back later or get in touch-we'd love to hear from you.",
     "filter_by": "Filter by",
     "filter_all_locations": "All locations",
     "filter_all_types": "All types",
@@ -745,6 +746,7 @@
         "title": "Mobile Development",
         "items": [
           "React Native",
+          "Ionic/Capacitor",
           "Flutter",
           "Android",
           "iOS"

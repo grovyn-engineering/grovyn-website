@@ -375,6 +375,8 @@
     "connect": "Connect",
     "about": "About",
     "careers": "Careers",
+    "portfolio": "Portfolio",
+    "blog": "Blog",
     "contact": "Contact",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -437,7 +439,7 @@
     "open_roles_title": "Vagas abertas",
     "open_roles_count": "{count} vagas abertas",
     "no_open_roles_title": "Nenhuma vaga aberta",
-    "no_open_roles_message": "Volte mais tarde ou entre em contato—adoraríamos ouvir você.",
+    "no_open_roles_message": "Volte mais tarde ou entre em contato-adoraríamos ouvir você.",
     "filter_by": "Filtrar",
     "filter_all_locations": "Todos os locais",
     "filter_all_types": "Todos os tipos",
@@ -625,6 +627,7 @@
         "title": "Mobile Development",
         "items": [
           "React Native",
+          "Ionic/Capacitor",
           "Flutter",
           "Android",
           "iOS"

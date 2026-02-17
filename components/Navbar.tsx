@@ -132,13 +132,6 @@ export default function Navbar() {
         <Link
           href={`/${locale}#hero`}
           className="flex items-center space-x-1 group shrink-0 mr-4 md:mr-6"
-          onClick={(e) => {
-            const isHome = pathname === `/${locale}` || pathname === "/";
-            if (isHome) {
-              e.preventDefault();
-              document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
         >
           <span className="relative h-10 shrink-0" style={{ width: "auto" }}>
             <Image

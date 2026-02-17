@@ -27,7 +27,7 @@ const testimonials = [
     name: "A3 House of Friends",
     role: "Café and Food Services",
     text: "As a café, speed and simplicity are essential, especially during peak hours. Grovyn helped us implement a QR-based ordering system with queue handling and inventory visibility that fit naturally into how we work. The solution reduced friction for customers and staff without changing the soul of the place. It felt thoughtfully designed, not forced.",
-    rating: "5.0/5",
+    rating: "5/5",
     image: "/assets/a3house.png",
   },
 ];

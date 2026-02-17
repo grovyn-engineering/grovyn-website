@@ -42,6 +42,7 @@ interface Project {
   metrics: { label: string; value: string };
   image: string;
   dossierId: string;
+  url?: string;
 }
 
 const projects: Project[] = [
@@ -57,6 +58,7 @@ const projects: Project[] = [
     metrics: { label: "Projects Showcased", value: "50+" },
     image: "/assets/Construction.png",
     dossierId: "GRVN-01",
+    url: "https://babuerectorspvtltd.com/",
   },
   {
     id: "2",
@@ -70,6 +72,7 @@ const projects: Project[] = [
     metrics: { label: "Lead Conversion", value: "35%+" },
     image: "/assets/roborofl-dark.png",
     dossierId: "GRVN-02",
+    url: "https://roborofl.grovyn.in/",
   },
   {
     id: "3",
@@ -80,9 +83,10 @@ const projects: Project[] = [
       "Gaming platform with live slot booking, food ordering, and admin panels. Real-time reservations and payments.",
     completedDate: "Dec 2024",
     techStack: ["Next.js", "Node.js", "WebSockets"],
-    metrics: { label: "Live Bookings", value: "1K+/day" },
+    metrics: { label: "Live Bookings", value: "500+/day" },
     image: "/assets/a3house-dark.png",
     dossierId: "GRVN-03",
+    url: "https://www.a3houseoffriends.in/",
   },
   {
     id: "4",
@@ -93,9 +97,10 @@ const projects: Project[] = [
       "Full-stack B2C hospital services platform. Appointment booking, teleconsultation, prescriptions, and patient management with HIPAA-compliant architecture.",
     completedDate: "Nov 2024",
     techStack: ["Next.js", "PostgreSQL", "WebRTC"],
-    metrics: { label: "Patients Served", value: "10K+" },
+    metrics: { label: "Patients Served", value: "1K+" },
     image: "/assets/24x7care.png",
     dossierId: "GRVN-04",
+    url: "https://the247care.com/",
   },
   {
     id: "5",
@@ -109,6 +114,7 @@ const projects: Project[] = [
     metrics: { label: "Try-on Sessions", value: "25K+" },
     image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&q=80&w=1200",
     dossierId: "GRVN-05",
+    url: "#",
   },
   {
     id: "6",
@@ -122,6 +128,7 @@ const projects: Project[] = [
     metrics: { label: "Issues Tracked", value: "100K+" },
     image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1200",
     dossierId: "GRVN-06",
+    url: "#",
   },
   {
     id: "7",
@@ -135,6 +142,7 @@ const projects: Project[] = [
     metrics: { label: "Queries Handled", value: "500K+" },
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200",
     dossierId: "GRVN-07",
+    url: "#",
   },
 ];
 
@@ -152,12 +160,28 @@ function ProjectCard({
   variant?: "center" | "side";
   fillHeight?: boolean;
 }) {
+  const [hovered, setHovered] = React.useState(false);
   const isCenter = variant === "center";
+  const hasUrl = project.url && project.url !== "#";
+
+  const handleVisitClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (hasUrl && project.url) {
+        window.open(project.url, "_blank", "noopener,noreferrer");
+      }
+    },
+    [hasUrl, project.url]
+  );
+
   return (
     <div
-      className={`rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border-2 border-gray-100 bg-white transition-all duration-500 ${
+      className={`group rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border-2 border-gray-100 bg-white transition-all duration-500 ${
         fillHeight ? "h-full w-full" : isCenter ? "aspect-[16/10] shadow-2xl" : "aspect-[4/3] shadow-lg"
       }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       <div className="relative w-full h-full">
         <Image
@@ -169,7 +193,7 @@ function ProjectCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
         <div
-          className={`absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-6 space-y-2 sm:space-y-3 ${
+          className={`absolute bottom-0 left-0 right-0 p-4 sm:p-5 md:p-6 space-y-2 sm:space-y-3 pointer-events-none ${
             isCenter ? "sm:p-6 md:p-8" : "p-3 sm:p-4"
           }`}
         >
@@ -188,22 +212,49 @@ function ProjectCard({
           >
             {project.name}
           </h3>
-          <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-white/15">
-            <div className="flex flex-col">
-              <span className="text-[7px] sm:text-[8px] font-black text-[#10b981] uppercase tracking-[0.2em]">
-                {project.metrics.label}
-              </span>
-              <span
-                className={`font-black text-white ${isCenter ? "text-base sm:text-lg md:text-xl" : "text-xs sm:text-sm"}`}
-              >
-                {project.metrics.value}
+          {hasUrl && (
+            <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-white/15">
+              <div className="flex flex-col">
+                <span className="text-[7px] sm:text-[8px] font-black text-[#10b981] uppercase tracking-[0.2em]">
+                  {project.metrics.label}
+                </span>
+                <span
+                  className={`font-black text-white ${isCenter ? "text-base sm:text-lg md:text-xl" : "text-xs sm:text-sm"}`}
+                >
+                  {project.metrics.value}
+                </span>
+              </div>
+              <span className="flex items-center gap-1 text-white font-black text-[7px] sm:text-[8px] uppercase tracking-widest">
+                View Dossier <Plus size={10} className="sm:w-3 sm:h-3" />
               </span>
             </div>
-            <span className="flex items-center gap-1 text-white font-black text-[7px] sm:text-[8px] uppercase tracking-widest">
-              View Dossier <Plus size={10} className="sm:w-3 sm:h-3" />
-            </span>
-          </div>
+          )}
         </div>
+        {project.url && (
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity duration-300"
+            style={{
+              zIndex: 100,
+              opacity: hovered ? 1 : 0,
+              pointerEvents: hovered ? "auto" : "none",
+            }}
+          >
+            {hasUrl ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#10b981] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#10b981]/30 hover:bg-[#0d9488] hover:shadow-xl hover:shadow-[#10b981]/40 transition-all duration-200 hover:scale-105 cursor-pointer"
+                onClick={handleVisitClick}
+              >
+                <ArrowUpRight size={18} className="shrink-0" />
+                Visit site
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white/20 text-white font-bold text-sm sm:text-base border border-white/30 cursor-default select-none">
+                Launching soon
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

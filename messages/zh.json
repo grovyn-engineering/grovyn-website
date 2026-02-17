@@ -375,6 +375,8 @@
     "connect": "Connect",
     "about": "About",
     "careers": "Careers",
+    "portfolio": "Portfolio",
+    "blog": "Blog",
     "contact": "Contact",
     "privacy": "Privacy",
     "terms": "Terms",
@@ -437,7 +439,7 @@
     "open_roles_title": "开放职位",
     "open_roles_count": "{count} 个职位",
     "no_open_roles_title": "暂无开放职位",
-    "no_open_roles_message": "请稍后再查看或与我们联系—我们期待您的消息。",
+    "no_open_roles_message": "请稍后再查看或与我们联系-我们期待您的消息。",
     "filter_by": "筛选",
     "filter_all_locations": "全部地点",
     "filter_all_types": "全部类型",
@@ -625,6 +627,7 @@
         "title": "Mobile Development",
         "items": [
           "React Native",
+          "Ionic/Capacitor",
           "Flutter",
           "Android",
           "iOS"

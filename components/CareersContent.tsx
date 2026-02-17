@@ -237,7 +237,7 @@ export default function CareersContent() {
             </p>
           </div>
 
-          {/* Filter tabs commented out for now—not wired up yet
+          {/* Filter tabs commented out for now-not wired up yet
           <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 sm:gap-6 mb-8 sm:mb-10 lg:mb-12">
             <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-gray-400">
               {t("filter_by")}
