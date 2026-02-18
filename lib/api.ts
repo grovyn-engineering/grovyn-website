@@ -32,6 +32,27 @@ export type ContactResponse =
   | { success: true; message: string; data?: { contactId?: string; submittedAt?: string } }
   | { success: false; message: string };
 
+export type NewsletterResponse =
+  | { success: true; message: string; data?: { subscribedAt?: string } }
+  | { success: false; message: string };
+
+export async function subscribeNewsletter(email: string): Promise<NewsletterResponse> {
+  const base = getBaseUrl();
+  if (!base || !isAllowedBaseUrl(base)) {
+    return { success: false, message: "API URL not configured. Set NEXT_PUBLIC_API_URL." };
+  }
+  const res = await fetch(`${base.replace(/\/$/, "")}/newsletter`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { success: false, message: (data as { message?: string }).message || "Failed to subscribe." };
+  }
+  return data as NewsletterResponse;
+}
+
 export async function submitContact(payload: ContactPayload): Promise<ContactResponse> {
   const base = getBaseUrl();
   if (!base || !isAllowedBaseUrl(base)) {

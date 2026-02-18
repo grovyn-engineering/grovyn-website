@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Play, Zap, LayoutGrid, Cloud, Headphones, Shield, FileCheck, Globe } from "lucide-react";
 import type { IndustrySlug } from "@/lib/industries";
+import { subscribeNewsletter } from "@/lib/api";
 const INDUSTRY_CARD: Record<
   IndustrySlug,
   { img: string; titleKey: string }
@@ -46,6 +47,83 @@ const INDUSTRY_CARD: Record<
 
 const HERO_VIDEO_SRC = "/videos/industries-hero.mp4";
 const HERO_POSTER = "/assets/industries-hero.png";
+
+function NewsletterBlock({
+  t,
+}: {
+  t: (key: string) => string;
+}) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setStatus("loading");
+    setMessage("");
+    const result = await subscribeNewsletter(trimmed);
+    if (result.success) {
+      setStatus("success");
+      setMessage(result.message);
+      setEmail("");
+    } else {
+      setStatus("error");
+      setMessage(result.message || t("newsletter_error"));
+    }
+  };
+
+  return (
+    <section className="relative py-24 sm:py-32 lg:py-48 px-4 sm:px-6 lg:px-12 overflow-hidden flex items-center justify-center">
+      <Image
+        src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&q=80&w=2000"
+        alt=""
+        fill
+        className="object-cover"
+        sizes="100vw"
+        priority={false}
+      />
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="max-w-4xl mx-auto w-full relative z-10">
+        <div className="bg-white/95 backdrop-blur-md rounded-[2rem] sm:rounded-[2.5rem] lg:rounded-[3rem] p-8 sm:p-10 lg:p-12 xl:p-20 text-center shadow-2xl space-y-6 sm:space-y-8 lg:space-y-10">
+          <div className="space-y-3 sm:space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-black text-[#111] tracking-tighter">
+              {t("newsletter_title")}
+            </h2>
+            <p className="text-gray-500 font-medium text-base sm:text-lg">{t("newsletter_subtitle")}</p>
+          </div>
+          {status === "success" ? (
+            <p className="text-[#10b981] font-semibold text-sm sm:text-base">{message}</p>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-lg mx-auto">
+              <input
+                type="email"
+                required
+                placeholder={t("newsletter_placeholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={status === "loading"}
+                className="flex-grow bg-gray-50 border border-gray-100 rounded-xl px-5 sm:px-6 py-3 sm:py-4 text-sm font-bold focus:outline-none focus:border-[#10b981] transition-all disabled:opacity-70"
+              />
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="bg-[#10b981] text-black px-8 sm:px-10 py-3 sm:py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-xl w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {status === "loading" ? t("newsletter_subscribing") : t("newsletter_cta")}
+              </button>
+            </form>
+          )}
+          {status === "error" && (
+            <p className="text-red-600 text-sm font-medium">{message}</p>
+          )}
+          <p className="text-[9px] sm:text-[10px] font-medium text-gray-400">{t("newsletter_disclaimer")}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function IndustriesContent() {
   const t = useTranslations("industries_landing");
@@ -370,41 +448,7 @@ export default function IndustriesContent() {
         </div>
       </section>
 
-      <section className="relative py-24 sm:py-32 lg:py-48 px-4 sm:px-6 lg:px-12 overflow-hidden flex items-center justify-center">
-        <Image
-          src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&q=80&w=2000"
-          alt=""
-          fill
-          className="object-cover"
-          sizes="100vw"
-          priority={false}
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div className="max-w-4xl mx-auto w-full relative z-10">
-          <div className="bg-white/95 backdrop-blur-md rounded-[2rem] sm:rounded-[2.5rem] lg:rounded-[3rem] p-8 sm:p-10 lg:p-12 xl:p-20 text-center shadow-2xl space-y-6 sm:space-y-8 lg:space-y-10">
-            <div className="space-y-3 sm:space-y-4">
-              <h2 className="text-3xl sm:text-4xl font-black text-[#111] tracking-tighter">
-                {t("newsletter_title")}
-              </h2>
-              <p className="text-gray-500 font-medium text-base sm:text-lg">{t("newsletter_subtitle")}</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-lg mx-auto">
-              <input
-                type="email"
-                placeholder={t("newsletter_placeholder")}
-                className="flex-grow bg-gray-50 border border-gray-100 rounded-xl px-5 sm:px-6 py-3 sm:py-4 text-sm font-bold focus:outline-none focus:border-[#10b981] transition-all"
-              />
-              <button
-                type="button"
-                className="bg-[#10b981] text-black px-8 sm:px-10 py-3 sm:py-4 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-xl w-full sm:w-auto"
-              >
-                {t("newsletter_cta")}
-              </button>
-            </div>
-            <p className="text-[9px] sm:text-[10px] font-medium text-gray-400">{t("newsletter_disclaimer")}</p>
-          </div>
-        </div>
-      </section>
+      <NewsletterBlock t={t} />
     </div>
   );
 }

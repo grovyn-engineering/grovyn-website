@@ -76,7 +76,7 @@ export default function CookieBanner() {
           <button
             type="button"
             onClick={handleDeclineAll}
-            className="absolute top-4 right-4 sm:top-5 sm:right-5 p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors"
+            className="absolute top-4 right-4 sm:top-5 sm:right-5 p-1.5 rounded-md text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors z-10 shrink-0"
             aria-label={t("close_aria")}
           >
             <X size={20} />
@@ -94,7 +94,7 @@ export default function CookieBanner() {
               </p>
               <p className="text-xs text-gray-600 mt-2">{t("decline_note")}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0 sm:pr-10">
               <button
                 type="button"
                 onClick={openSettings}

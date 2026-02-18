@@ -39,6 +39,19 @@ export default function ContactForm() {
     { id: 3, label: t("step_details"), icon: <Rocket size={20} /> },
   ];
 
+  const isStepValid = (s: number) => {
+    if (s === 1) {
+      return (
+        formData.fullName.trim() !== "" &&
+        formData.email.trim() !== "" &&
+        formData.company.trim() !== ""
+      );
+    }
+    if (s === 2) return formData.projectGoal.trim() !== "";
+    if (s === 3) return formData.budget.trim() !== "" && formData.timeline.trim() !== "";
+    return false;
+  };
+
   const handlePlatformToggle = (plat: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -404,8 +417,8 @@ export default function ContactForm() {
                 <button
                   type="button"
                   onClick={() => setStep(step + 1)}
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-[#10b981] text-white px-6 sm:px-8 py-2.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-2 hover:bg-[#0d9488] transition-all shadow-md shadow-[#10b981]/20 disabled:opacity-60 disabled:pointer-events-none"
+                  disabled={isSubmitting || !isStepValid(step)}
+                  className="w-full sm:w-auto bg-[#10b981] text-white px-6 sm:px-8 py-2.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-2 hover:bg-[#0d9488] transition-all shadow-md shadow-[#10b981]/20 disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed"
                 >
                   <span>{t("continue")}</span>
                   <ArrowRight size={14} className="w-4 h-4" />
@@ -413,8 +426,8 @@ export default function ContactForm() {
               ) : (
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-[#10b981] text-white px-8 sm:px-10 py-2.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-2 hover:bg-[#0d9488] transition-all shadow-lg shadow-[#10b981]/25 disabled:opacity-60 disabled:pointer-events-none"
+                  disabled={isSubmitting || !isStepValid(3)}
+                  className="w-full sm:w-auto bg-[#10b981] text-white px-8 sm:px-10 py-2.5 rounded-lg font-bold text-xs flex items-center justify-center space-x-2 hover:bg-[#0d9488] transition-all shadow-lg shadow-[#10b981]/25 disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed"
                 >
                   <span>{isSubmitting ? t("sending") : t("send_request")}</span>
                   <Check size={14} strokeWidth={3} className="sm:w-4 sm:h-4" />

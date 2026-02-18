@@ -2451,7 +2451,9 @@
     "newsletter_subtitle": "Get occasional updates about our work.",
     "newsletter_placeholder": "Your email",
     "newsletter_cta": "Subscribe",
-    "newsletter_disclaimer": "We respect your privacy. Unsubscribe anytime."
+    "newsletter_subscribing": "Subscribing…",
+    "newsletter_disclaimer": "We respect your privacy. Unsubscribe anytime.",
+    "newsletter_error": "Something went wrong. Please try again."
   },
   "projects": {
     "title": "Our work",
