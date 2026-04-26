@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { setAdminToken } from "@/lib/adminToken";
 
 const ACCENT = "#00e676";
 const ACCENT_DIM = "rgba(0, 230, 118, 0.55)";
@@ -85,6 +84,7 @@ export default function AdminLogin() {
       const base = apiBase();
       const res = await fetch(`${base}/admin/auth/login`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -115,14 +115,14 @@ export default function AdminLogin() {
       const base = apiBase();
       const res = await fetch(`${base}/admin/auth/verify-login-otp`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: otp.trim() }),
+        body: JSON.stringify({ email, otp: otp.trim(), keepSession }),
       });
 
       const data = await res.json();
 
-      if (data.success && data.data?.token) {
-        setAdminToken(data.data.token, keepSession);
+      if (data.success) {
         router.push("/admin");
         return;
       }
@@ -144,6 +144,7 @@ export default function AdminLogin() {
       const base = apiBase();
       const res = await fetch(`${base}/admin/auth/resend-login-otp`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });

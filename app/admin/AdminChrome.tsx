@@ -44,8 +44,7 @@ export default function AdminChrome({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const isLoginPage = pathname === "/admin/login";
-  /** Login must not sit behind the global “Loading admin…” gate (first paint). */
-  const [loading, setLoading] = useState(!isLoginPage);
+  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -62,32 +61,49 @@ export default function AdminChrome({ children }: { children: React.ReactNode })
   }, [mobileOpen]);
 
   useEffect(() => {
-    if (isLoginPage) {
-      setLoading(false);
-      return;
-    }
+    let cancelled = false;
 
     const verifyAuth = async () => {
+      if (isLoginPage) {
+        try {
+          const res = await fetchWithAuth("/admin/auth/me", { method: "GET" });
+          const data = await res.json();
+          if (cancelled) return;
+          if (data.success) {
+            router.replace("/admin");
+            return;
+          }
+          clearAdminToken();
+        } catch {
+          if (!cancelled) clearAdminToken();
+        }
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetchWithAuth("/admin/auth/me", { method: "GET" });
         const data = await res.json();
+        if (cancelled) return;
         if (data.success) {
           setIsAuthenticated(true);
           const email = data.data?.email;
           if (typeof email === "string" && email.length > 0) setAdminEmail(email);
-        }
-        else {
+        } else {
           clearAdminToken();
           router.push("/admin/login");
         }
       } catch {
-        router.push("/admin/login");
+        if (!cancelled) router.push("/admin/login");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     verifyAuth();
+    return () => {
+      cancelled = true;
+    };
   }, [router, isLoginPage]);
 
   const handleLogout = async () => {
