@@ -21,6 +21,13 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import ContactForm from "@/components/ContactForm";
+import {
+  fetchCmsCategoriesClient,
+  fetchCmsPortfolioProjectsClient,
+  fetchCmsSelectedWorkClient,
+  type CmsCategory,
+  type SelectedWorkDoc,
+} from "@/lib/cms";
 
 // --- Carousel constants (single source for layout) ---
 const CAROUSEL_EASE = [0.4, 0, 0.2, 1] as const;
@@ -34,7 +41,9 @@ const CARD_HEIGHT_DESKTOP = 480;
 interface Project {
   id: string;
   name: string;
-  category: "Web" | "Mobile" | "Integration" | "Construction" | "Media & Marketing" | "Gaming" | "Healthcare" | "AR/VR" | "SaaS";
+  category: string;
+  /** Filter key; falls back to category when missing (static fallback). */
+  categoryKey?: string;
   industry: string;
   description: string;
   completedDate: string;
@@ -45,7 +54,25 @@ interface Project {
   url?: string;
 }
 
-const projects: Project[] = [
+function categoryIconFromKey(iconKey: string) {
+  const k = iconKey.trim().toLowerCase();
+  const map: Record<string, React.ReactNode> = {
+    layers: <Layers size={28} />,
+    activity: <Activity size={28} />,
+    smartphone: <Smartphone size={28} />,
+    "shield-check": <ShieldCheck size={28} />,
+    shieldcheck: <ShieldCheck size={28} />,
+    boxes: <Boxes size={28} />,
+    globe: <Globe size={28} />,
+    layoutgrid: <LayoutGrid size={28} />,
+    "layout-grid": <LayoutGrid size={28} />,
+    search: <Search size={28} />,
+    code: <Code size={28} />,
+  };
+  return map[k] ?? <Layers size={28} />;
+}
+
+const STATIC_PROJECTS: Project[] = [
   {
     id: "1",
     name: "BEPL Corporation",
@@ -144,7 +171,7 @@ const projects: Project[] = [
     dossierId: "GRVN-07",
     url: "#",
   },
-];
+].map((p) => ({ ...p, categoryKey: p.category }));
 
 const MAP_IMG = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1200";
 
@@ -470,13 +497,67 @@ export default function PortfolioContent() {
   const t = useTranslations("portfolio");
   const [activeCategoryKey, setActiveCategoryKey] = useState("All");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [cmsLoading, setCmsLoading] = useState(true);
+  const [cmsProjects, setCmsProjects] = useState<Awaited<ReturnType<typeof fetchCmsPortfolioProjectsClient>>>([]);
+  const [cmsCategories, setCmsCategories] = useState<CmsCategory[]>([]);
+  const [selectedWorkDoc, setSelectedWorkDoc] = useState<SelectedWorkDoc | null>(null);
 
   const goTo = useCallback((nextIndex: number) => {
     setActiveIndex((prev) => (nextIndex === prev ? prev : nextIndex));
   }, []);
 
-  const categories = useMemo(
-    () => [
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [c, p, sw] = await Promise.all([
+          fetchCmsCategoriesClient(),
+          fetchCmsPortfolioProjectsClient(),
+          fetchCmsSelectedWorkClient(),
+        ]);
+        if (cancelled) return;
+        setCmsCategories(c);
+        setCmsProjects(p);
+        setSelectedWorkDoc(sw);
+      } finally {
+        if (!cancelled) setCmsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const projects: Project[] = useMemo(() => {
+    if (cmsProjects.length === 0) return STATIC_PROJECTS;
+    return cmsProjects.map((x) => ({
+      id: x.id,
+      name: x.name,
+      category: x.category,
+      categoryKey: x.categoryKey,
+      industry: x.industry,
+      description: x.description,
+      completedDate: x.completedDate,
+      techStack: x.techStack,
+      metrics: x.metrics,
+      image: x.image,
+      dossierId: x.dossierId,
+      url: x.url,
+    }));
+  }, [cmsProjects]);
+
+  const categories = useMemo(() => {
+    if (cmsCategories.length > 0) {
+      return [
+        { name: t("category_all"), key: "All", icon: <Layers size={28} /> },
+        ...cmsCategories.map((c) => ({
+          name: c.name,
+          key: c.key,
+          icon: categoryIconFromKey(c.iconKey || "layers"),
+        })),
+      ];
+    }
+    return [
       { name: t("category_all"), key: "All", icon: <Layers size={28} /> },
       { name: t("category_construction"), key: "Construction", icon: <Layers size={28} /> },
       { name: t("category_media_marketing"), key: "Media & Marketing", icon: <Activity size={28} /> },
@@ -484,14 +565,96 @@ export default function PortfolioContent() {
       { name: t("category_healthcare"), key: "Healthcare", icon: <ShieldCheck size={28} /> },
       { name: t("category_arvr"), key: "AR/VR", icon: <Boxes size={28} /> },
       { name: t("category_saas"), key: "SaaS", icon: <Globe size={28} /> },
-    ],
-    [t]
-  );
+    ];
+  }, [cmsCategories, t]);
 
   const filteredProjects = useMemo(() => {
     if (activeCategoryKey === "All") return projects;
-    return projects.filter((p) => p.category === activeCategoryKey);
-  }, [activeCategoryKey]);
+    const a = activeCategoryKey.toLowerCase();
+    return projects.filter((p) => (p.categoryKey ?? p.category).toLowerCase() === a);
+  }, [activeCategoryKey, projects]);
+
+  const selectedCards = useMemo(() => {
+    const p = projects;
+    const d = selectedWorkDoc;
+    const cms = !!(d && (d.card1?.title || d.card1?.backgroundImage || d.card2?.title));
+    if (cms && d) {
+      return {
+        c1: {
+          image: d.card1?.backgroundImage || p[0]?.image || "",
+          archiveTag: d.card1?.archiveTag || `SYSTEM_ARCHIVE_${p[0]?.dossierId || ""}`,
+          title: d.card1?.title || p[0]?.name || "",
+          fLL: d.card1?.footerLeftLabel || "Reliability",
+          fLV: d.card1?.footerLeftValue || "99.99%",
+          fLA: d.card1?.footerLeftAccent !== false,
+          fRL: d.card1?.footerRightLabel || "Deployment",
+          fRV: d.card1?.footerRightValue || "Global Edge",
+        },
+        c2: {
+          tagText: d.card2?.tagText || "GAMING TIER 1",
+          title: d.card2?.title || p[2]?.name || "",
+          description: d.card2?.description || p[2]?.description || "",
+          bottomId: d.card2?.bottomId || p[2]?.dossierId || "",
+          tagIconKey: d.card2?.tagIcon || "smartphone",
+        },
+        c3: {
+          bg: d.card3?.backgroundImage || p[1]?.image || "",
+          logo: d.card3?.logoImage || "",
+          tagText: d.card3?.tagText || "VIRAL CONTENT ENGINE",
+          title: d.card3?.title || p[1]?.name || "",
+          bottomId: d.card3?.bottomId || "Archived_01_2025",
+          tagIconKey: d.card3?.tagIcon || "activity",
+        },
+        c4: {
+          image: d.card4?.backgroundImage || p[3]?.image || "",
+          tagText: d.card4?.tagText || "HEALTHCARE_B2C_DOSSIER",
+          title: d.card4?.title || p[3]?.name || "",
+          description: d.card4?.description || p[3]?.description || "",
+          footerLabel: d.card4?.footerLabel || "Patients Served",
+          footerValue: d.card4?.footerValue || "10K+",
+          tech: (d.card4?.techChips?.length ? d.card4.techChips : p[3]?.techStack?.slice(0, 3)) || [],
+          tagIconKey: d.card4?.tagIcon || "shield-check",
+        },
+      };
+    }
+    return {
+      c1: {
+        image: p[0]?.image || "",
+        archiveTag: `SYSTEM_ARCHIVE_${p[0]?.dossierId || ""}`,
+        title: p[0]?.name || "",
+        fLL: "Reliability",
+        fLV: "99.99%",
+        fLA: true,
+        fRL: "Deployment",
+        fRV: "Global Edge",
+      },
+      c2: {
+        tagText: "GAMING TIER 1",
+        title: p[2]?.name || "",
+        description: p[2]?.description || "",
+        bottomId: p[2]?.dossierId || "",
+        tagIconKey: "smartphone",
+      },
+      c3: {
+        bg: p[1]?.image || "",
+        logo: "",
+        tagText: "VIRAL CONTENT ENGINE",
+        title: p[1]?.name || "",
+        bottomId: "Archived_01_2025",
+        tagIconKey: "activity",
+      },
+      c4: {
+        image: p[3]?.image || "",
+        tagText: "HEALTHCARE_B2C_DOSSIER",
+        title: p[3]?.name || "",
+        description: p[3]?.description || "",
+        footerLabel: "Patients Served",
+        footerValue: "10K+",
+        tech: p[3]?.techStack?.slice(0, 3) || [],
+        tagIconKey: "shield-check",
+      },
+    };
+  }, [selectedWorkDoc, projects]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -541,28 +704,39 @@ export default function PortfolioContent() {
 
         <div className="absolute bottom-[-60px] sm:bottom-[-70px] lg:bottom-[-80px] left-1/2 -translate-x-1/2 w-full max-w-6xl px-4 sm:px-6 z-20">
           <div className="flex items-center justify-center space-x-2 sm:space-x-4 md:space-x-10 pb-4 scrollbar-hide">
-            {categories.map((cat) => (
-              <div key={cat.key} className="flex flex-col items-center space-y-2 sm:space-y-4 group shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setActiveCategoryKey(cat.key)}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl border-2 sm:border-4 ${
-                    activeCategoryKey === cat.key
-                      ? "bg-[#10b981] text-white border-white scale-110 shadow-[#10b981]/40"
-                      : "bg-white border-gray-50 text-gray-400 hover:border-[#10b981]/40"
-                  }`}
-                >
-                  <div className="scale-75 sm:scale-100">{cat.icon}</div>
-                </button>
-                <span
-                  className={`text-[9px] sm:text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-colors text-center ${
-                    activeCategoryKey === cat.key ? "text-[#10b981]" : "text-gray-400 group-hover:text-black dark:group-hover:text-white"
-                  }`}
-                >
-                  {cat.name}
-                </span>
-              </div>
-            ))}
+            {cmsLoading ? (
+              <>
+                {Array.from({ length: 7 }).map((_, idx) => (
+                  <div key={idx} className="flex shrink-0 flex-col items-center space-y-2 sm:space-y-4">
+                    <div className="h-16 w-16 animate-pulse rounded-full bg-white/40 sm:h-20 sm:w-20 md:h-24 md:w-24" />
+                    <div className="h-2 w-10 animate-pulse rounded bg-white/30 sm:w-12" />
+                  </div>
+                ))}
+              </>
+            ) : (
+              categories.map((cat) => (
+                <div key={cat.key} className="flex flex-col items-center space-y-2 sm:space-y-4 group shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategoryKey(cat.key)}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl border-2 sm:border-4 ${
+                      activeCategoryKey === cat.key
+                        ? "bg-[#10b981] text-white border-white scale-110 shadow-[#10b981]/40"
+                        : "bg-white border-gray-50 text-gray-400 hover:border-[#10b981]/40"
+                    }`}
+                  >
+                    <div className="scale-75 sm:scale-100">{cat.icon}</div>
+                  </button>
+                  <span
+                    className={`text-[9px] sm:text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-colors text-center ${
+                      activeCategoryKey === cat.key ? "text-[#10b981]" : "text-gray-400 group-hover:text-black dark:group-hover:text-white"
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -583,14 +757,28 @@ export default function PortfolioContent() {
           </div>
         </div>
 
-        {/* Refactored carousel: single source of truth (activeIndex), distance-based styling, no overflow */}
-        <PortfolioCarousel
-          projects={filteredProjects}
-          activeIndex={activeIndex}
-          onGoTo={goTo}
-          prevSlideAria={t("prev_slide_aria")}
-          nextSlideAria={t("next_slide_aria")}
-        />
+        {cmsLoading ? (
+          <div className="mx-auto max-w-4xl animate-pulse space-y-6 py-12">
+            <div className="mx-auto h-[380px] max-w-[320px] rounded-2xl bg-neutral-200/90 sm:h-[420px] md:h-[480px]" />
+            <div className="flex items-center justify-center gap-6">
+              <div className="h-12 w-12 rounded-full bg-neutral-200" />
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-2 w-2 rounded-full bg-neutral-200" />
+                ))}
+              </div>
+              <div className="h-12 w-12 rounded-full bg-neutral-200" />
+            </div>
+          </div>
+        ) : (
+          <PortfolioCarousel
+            projects={filteredProjects}
+            activeIndex={activeIndex}
+            onGoTo={goTo}
+            prevSlideAria={t("prev_slide_aria")}
+            nextSlideAria={t("next_slide_aria")}
+          />
+        )}
       </section>
 
       {/* Selected Work - premium archive of elite systems (light) */}
@@ -628,8 +816,8 @@ export default function PortfolioContent() {
             >
               <div className="absolute inset-0" suppressHydrationWarning>
                 <Image
-                  src={projects[0].image}
-                  alt={projects[0].name}
+                  src={selectedCards.c1.image}
+                  alt={selectedCards.c1.title}
                   fill
                   className="object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-hover/card:translate-y-[-2%]"
                   sizes="(max-width: 1024px) 100vw, 66vw"
@@ -641,21 +829,25 @@ export default function PortfolioContent() {
               <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-6 lg:p-8">
                 <div>
                   <p className="font-mono text-[10px] sm:text-[11px] font-medium tracking-[0.35em] uppercase text-white/60">
-                    SYSTEM_ARCHIVE_{projects[0].dossierId}
+                    {selectedCards.c1.archiveTag}
                   </p>
                   <h3 className="mt-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight italic leading-tight">
-                    {projects[0].name}
+                    {selectedCards.c1.title}
                   </h3>
                 </div>
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div className="flex flex-wrap gap-6">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Reliability</p>
-                      <p className="text-lg sm:text-xl font-black text-[#10b981]">99.99%</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">{selectedCards.c1.fLL}</p>
+                      <p
+                        className={`text-lg sm:text-xl font-black ${selectedCards.c1.fLA ? "text-[#10b981]" : "text-white"}`}
+                      >
+                        {selectedCards.c1.fLV}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Deployment</p>
-                      <p className="text-lg sm:text-xl font-black text-white">Global Edge</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">{selectedCards.c1.fRL}</p>
+                      <p className="text-lg sm:text-xl font-black text-white">{selectedCards.c1.fRV}</p>
                     </div>
                   </div>
                   {/* <button
@@ -679,23 +871,23 @@ export default function PortfolioContent() {
               suppressHydrationWarning
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#10b981]/10 flex items-center justify-center text-[#10b981]">
-                  <Smartphone size={20} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#10b981]/10 text-[#10b981] [&_svg]:h-5 [&_svg]:w-5">
+                  {categoryIconFromKey(selectedCards.c2.tagIconKey)}
                 </div>
                 <p className="font-mono text-[10px] font-medium tracking-[0.3em] uppercase text-gray-500">
-                  GAMING TIER 1
+                  {selectedCards.c2.tagText}
                 </p>
               </div>
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#111] tracking-tight leading-tight">
-                  {projects[2].name}
+                  {selectedCards.c2.title}
                 </h3>
                 <p className="mt-3 text-sm text-gray-500 leading-relaxed line-clamp-2" suppressHydrationWarning>
-                  {projects[2].description}
+                  {selectedCards.c2.description}
                 </p>
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400">{projects[2].dossierId}</span>
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-gray-400">{selectedCards.c2.bottomId}</span>
                 {/* <button type="button" className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-[#10b981] hover:bg-[#10b981]/10 transition-colors duration-300" aria-label="Open">
                   <Plus size={18} />
                 </button> */}
@@ -711,27 +903,33 @@ export default function PortfolioContent() {
               className="lg:col-span-4 relative rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden min-h-[280px] group/card transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)] hover:shadow-[0_24px_48px_-16px_rgba(0,0,0,0.08)] hover:translate-y-[-4px]"
             >
               <div className="absolute inset-0">
-                <Image
-                  src={projects[1].image}
-                  alt={projects[1].name}
-                  fill
-                  className="object-cover opacity-20 group-hover/card:opacity-100 transition-opacity duration-[600ms]"
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                />
-                
+                {selectedCards.c3.bg ? (
+                  <Image
+                    src={selectedCards.c3.bg}
+                    alt=""
+                    fill
+                    className="object-cover opacity-20 transition-opacity duration-[600ms] group-hover/card:opacity-100"
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                  />
+                ) : null}
               </div>
-              <div className="relative flex flex-col justify-between h-full p-5 sm:p-6">
-                <div className="flex items-center gap-2">
-                  <Activity size={16} className="text-[#10b981]" />
+              <div className="relative flex h-full flex-col justify-between p-5 sm:p-6">
+                <div className="flex items-center gap-2 text-[#10b981] [&_svg]:h-4 [&_svg]:w-4">
+                  {categoryIconFromKey(selectedCards.c3.tagIconKey)}
                   <p className="font-mono text-[10px] font-medium tracking-[0.3em] uppercase text-[#10b981]">
-                    VIRAL CONTENT ENGINE
+                    {selectedCards.c3.tagText}
                   </p>
                 </div>
+                {selectedCards.c3.logo ? (
+                  <div className="relative mx-auto my-4 h-28 w-full max-w-[220px]">
+                    <Image src={selectedCards.c3.logo} alt="" fill className="object-contain" sizes="220px" />
+                  </div>
+                ) : null}
                 <div>
                   <h3 className="text-xl sm:text-2xl font-black text-[#111] tracking-tight leading-tight">
-                    {projects[1].name}
+                    {selectedCards.c3.title}
                   </h3>
-                  <p className="mt-2 text-[10px] font-mono uppercase tracking-widest text-gray-400">Archived_01_2025</p>
+                  <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-gray-400">{selectedCards.c3.bottomId}</p>
                 </div>
                 <div className="pt-4">
                   {/* <button type="button" className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-[#10b981] hover:bg-[#10b981]/10 transition-colors duration-300" aria-label="Open">
@@ -751,8 +949,8 @@ export default function PortfolioContent() {
             >
               <div className="absolute inset-0">
                 <Image
-                  src={projects[3].image}
-                  alt={projects[3].name}
+                  src={selectedCards.c4.image}
+                  alt={selectedCards.c4.title}
                   fill
                   className="object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)] group-hover/card:translate-y-[-2%]"
                   sizes="(max-width: 1024px) 100vw, 66vw"
@@ -760,30 +958,30 @@ export default function PortfolioContent() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20" />
               </div>
               <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-6 lg:p-8">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={16} className="text-[#10b981] shrink-0" />
+                <div className="flex items-center gap-2 text-[#10b981] [&_svg]:h-4 [&_svg]:w-4">
+                  {categoryIconFromKey(selectedCards.c4.tagIconKey)}
                   <p className="font-mono text-[10px] sm:text-[11px] font-medium tracking-[0.35em] uppercase text-white/60">
-                    HEALTHCARE_B2C_DOSSIER
+                    {selectedCards.c4.tagText}
                   </p>
                 </div>
                 <div>
                   <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
-                    {projects[3].name}
+                    {selectedCards.c4.title}
                   </h3>
-                  <p className="mt-2 text-sm text-white/60 leading-relaxed line-clamp-2 max-w-xl">
-                    {projects[3].description}
+                  <p className="mt-2 max-w-xl line-clamp-2 text-sm leading-relaxed text-white/60">
+                    {selectedCards.c4.description}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-end justify-between gap-4">
                   <div className="flex flex-wrap gap-4">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Patients Served</p>
-                      <p className="text-lg sm:text-xl font-black text-[#10b981]">10K+</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-white/70">{selectedCards.c4.footerLabel}</p>
+                      <p className="text-lg sm:text-xl font-black text-[#10b981]">{selectedCards.c4.footerValue}</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {projects[3].techStack.slice(0, 3).map((t) => (
-                        <span key={t} className="font-mono text-[9px] uppercase tracking-wider text-white/50">
-                          {t}
+                      {selectedCards.c4.tech.map((tech) => (
+                        <span key={tech} className="font-mono text-[9px] uppercase tracking-wider text-white/50">
+                          {tech}
                         </span>
                       ))}
                     </div>

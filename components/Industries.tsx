@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { fetchCmsIndustrySlidesClient, type IndustrySlideDoc } from "@/lib/cms";
 
 const industryIds = ["healthcare", "fintech", "ecommerce", "edtech", "media", "construction"] as const;
 const industryImages: Record<string, string> = {
@@ -40,6 +41,30 @@ const watermarks: Record<string, string> = {
 };
 
 type IndustryId = (typeof industryIds)[number];
+
+type IndustryRow = {
+  id: IndustryId;
+  title: string;
+  location: string;
+  areas: string[];
+  projects: string;
+  uptime: string;
+  image: string;
+  watermark: string;
+};
+
+function mapSlidesToIndustries(slides: IndustrySlideDoc[]): IndustryRow[] {
+  return slides.map((s) => ({
+    id: s.iconId as IndustryId,
+    title: s.title,
+    location: s.imageLabel || "",
+    areas: Array.isArray(s.areas) ? s.areas : [],
+    projects: s.statProjects || "",
+    uptime: s.statUptime || "",
+    image: s.imageUrl,
+    watermark: s.watermark || s.title.replace(/\s+/g, " ").toUpperCase().slice(0, 24),
+  }));
+}
 
 function BlueprintIllustration({
   id,
@@ -136,7 +161,7 @@ function BlueprintIllustration({
 
 export default function Industries() {
   const t = useTranslations("industries");
-  const industries = useMemo(
+  const staticIndustries = useMemo(
     () =>
       industryIds.map((id) => ({
         id,
@@ -150,10 +175,37 @@ export default function Industries() {
       })),
     [t]
   );
+  const [cmsSlides, setCmsSlides] = useState<IndustrySlideDoc[]>([]);
+  const [cmsLoading, setCmsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const slides = await fetchCmsIndustrySlidesClient();
+        if (!cancelled) setCmsSlides(slides);
+      } finally {
+        if (!cancelled) setCmsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const industries = useMemo(() => {
+    if (cmsSlides.length > 0) return mapSlidesToIndustries(cmsSlides);
+    return staticIndustries;
+  }, [cmsSlides, staticIndustries]);
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [windowStart, setWindowStart] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const current = industries[activeIndex];
+  const current = industries[activeIndex] ?? staticIndustries[0];
+
+  useEffect(() => {
+    if (activeIndex >= industries.length) setActiveIndex(0);
+  }, [industries.length, activeIndex]);
 
   const visibleCount = Math.min(4, industries.length);
   const visibleIndustries = industries.slice(windowStart, windowStart + visibleCount);
@@ -212,6 +264,25 @@ export default function Industries() {
         </div>
 
         <div className="relative bg-[#f4f6f8] rounded-[1.5rem] sm:rounded-[2rem] p-3 sm:p-6 md:p-8 lg:p-10 overflow-hidden border border-gray-100 shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)] min-h-[420px] sm:min-h-[500px] lg:min-h-[600px]">
+          {cmsLoading ? (
+            <div className="flex min-h-[380px] animate-pulse flex-col gap-6 lg:flex-row lg:gap-12">
+              <div className="h-64 flex-1 rounded-2xl bg-neutral-200/80 sm:h-80 lg:aspect-[4/3] lg:h-auto" />
+              <div className="flex flex-1 flex-col justify-center gap-4">
+                <div className="h-10 w-3/4 rounded bg-neutral-200/80" />
+                <div className="h-6 w-1/2 rounded bg-neutral-200/60" />
+                <div className="space-y-2 pt-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-4 w-full rounded bg-neutral-200/50" />
+                  ))}
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <div className="h-24 flex-1 rounded-xl bg-neutral-200/70" />
+                  <div className="h-24 flex-1 rounded-xl bg-neutral-200/70" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-[0.035] overflow-hidden">
             <h1 
               key={current.watermark}
@@ -306,51 +377,58 @@ export default function Industries() {
               </div>
             </div>
           </div>
+            </>
+          )}
         </div>
 
-        <div className="mt-[-10px] sm:mt-[-15px] lg:mt-[-20px] flex flex-col items-center justify-center relative z-10">
-          <div className="flex items-center justify-center gap-1 sm:gap-4 md:gap-6">
-            <button
-              type="button"
-              onClick={prev}
-              className="relative z-0 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white border-2 border-gray-200 flex items-center justify-center text-gray-500 hover:text-[#10b981] hover:border-[#10b981]/40 hover:bg-[#10b981]/5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] transition-all duration-300 flex-shrink-0"
-              aria-label="Previous industry"
-            >
-              <ChevronLeft size={16} strokeWidth={2.5} className="sm:w-6 sm:h-6" />
-            </button>
-            <div className="relative z-10 flex items-center space-x-1 sm:space-x-3 md:space-x-5">
-              {visibleIndustries.map((ind) => {
-                const idx = industries.indexOf(ind);
-                return (
-                  <button
-                    key={ind.id}
-                    type="button"
-                    onClick={() => setActiveIndex(idx)}
-                    className={`group relative z-10 w-12 h-12 sm:w-20 sm:h-20 bg-white rounded-lg sm:rounded-2xl flex items-center justify-center transition-all duration-500 border-2 overflow-visible ${activeIndex === idx ? "border-[#10b981] shadow-[0_8px_24px_-4px_rgba(16,185,129,0.25),0_0_0_1px_rgba(16,185,129,0.1)] scale-105 bg-[#10b981]/5" : "border-gray-300 hover:border-gray-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"}`}
-                    aria-label={`Go to ${ind.title}`}
-                    aria-current={activeIndex === idx ? "true" : undefined}
-                  >
-                    <BlueprintIllustration
-                      id={ind.id}
-                      isActive={activeIndex === idx}
-                    />
-                    {activeIndex === idx && (
-                      <div className="absolute inset-0 border-4 border-[#10b981]/10 rounded-lg sm:rounded-2xl animate-pulse pointer-events-none" />
-                    )}
-                  </button>
-                );
-              })}
+        {!cmsLoading ? (
+          <div className="relative z-10 mt-[-10px] flex flex-col items-center justify-center sm:mt-[-15px] lg:mt-[-20px]">
+            <div className="flex items-center justify-center gap-1 sm:gap-4 md:gap-6">
+              <button
+                type="button"
+                onClick={prev}
+                className="relative z-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-white text-gray-500 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-300 hover:border-[#10b981]/40 hover:bg-[#10b981]/5 hover:text-[#10b981] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] sm:h-12 sm:w-12 sm:rounded-xl"
+                aria-label="Previous industry"
+              >
+                <ChevronLeft size={16} strokeWidth={2.5} className="sm:h-6 sm:w-6" />
+              </button>
+              <div className="relative z-10 flex items-center space-x-1 sm:space-x-3 md:space-x-5">
+                {visibleIndustries.map((ind) => {
+                  const idx = industries.indexOf(ind);
+                  return (
+                    <button
+                      key={ind.id}
+                      type="button"
+                      onClick={() => setActiveIndex(idx)}
+                      className={`group relative z-10 flex h-12 w-12 items-center justify-center overflow-visible rounded-lg border-2 bg-white transition-all duration-500 sm:h-20 sm:w-20 sm:rounded-2xl ${activeIndex === idx ? "scale-105 border-[#10b981] bg-[#10b981]/5 shadow-[0_8px_24px_-4px_rgba(16,185,129,0.25),0_0_0_1px_rgba(16,185,129,0.1)]" : "border-gray-300 hover:border-gray-400 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"}`}
+                      aria-label={`Go to ${ind.title}`}
+                      aria-current={activeIndex === idx ? "true" : undefined}
+                    >
+                      <BlueprintIllustration id={ind.id} isActive={activeIndex === idx} />
+                      {activeIndex === idx && (
+                        <div className="pointer-events-none absolute inset-0 animate-pulse rounded-lg border-4 border-[#10b981]/10 sm:rounded-2xl" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={next}
+                className="relative z-0 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-white text-gray-500 shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-all duration-300 hover:border-[#10b981]/40 hover:bg-[#10b981]/5 hover:text-[#10b981] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] sm:h-12 sm:w-12 sm:rounded-xl"
+                aria-label="Next industry"
+              >
+                <ChevronRight size={16} strokeWidth={2.5} className="sm:h-6 sm:w-6" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={next}
-              className="relative z-0 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-white border-2 border-gray-200 flex items-center justify-center text-gray-500 hover:text-[#10b981] hover:border-[#10b981]/40 hover:bg-[#10b981]/5 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_4px_12px_rgba(16,185,129,0.15)] transition-all duration-300 flex-shrink-0"
-              aria-label="Next industry"
-            >
-              <ChevronRight size={16} strokeWidth={2.5} className="sm:w-6 sm:h-6" />
-            </button>
           </div>
-        </div>
+        ) : (
+          <div className="mt-6 flex justify-center gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-12 w-12 animate-pulse rounded-xl bg-neutral-200/80 sm:h-20 sm:w-20" />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

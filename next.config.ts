@@ -23,7 +23,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https: http://localhost:8080 http://127.0.0.1:8080",
+      "connect-src 'self' https: http://localhost:8080 http://127.0.0.1:8080 http://localhost:3000 http://127.0.0.1:3000",
       "frame-src 'self' https://cal.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
@@ -35,6 +35,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
       { protocol: "https", hostname: "i.pravatar.cc", pathname: "/**" },
       { protocol: "https", hostname: "*.ngrok-free.app", pathname: "/**" },
