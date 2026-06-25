@@ -32,7 +32,12 @@ const securityHeaders = [
   },
 ];
 
+/** Internal URL of the Express backend on the Docker network. Read at BUILD time — rewrites() is serialized into the route manifest by `next build` — so it is also passed as a build arg in the Dockerfile/compose. */
+const BACKEND_INTERNAL_URL =
+  process.env.BACKEND_INTERNAL_URL?.replace(/\/$/, "") ?? "http://backend:8080";
+
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
@@ -67,6 +72,12 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+    ];
+  },
+  /** Same-origin proxy: browser/SSR call `/api/*`, Next forwards to the backend container and strips the `/api` prefix so the backend's root-mounted routes (/contact, /admin, ...) still match. Keeps everything on one origin → no CORS, cookies just work. */
+  async rewrites() {
+    return [
+      { source: "/api/:path*", destination: `${BACKEND_INTERNAL_URL}/:path*` },
     ];
   },
 };

@@ -1,0 +1,71 @@
+# Grovyn — single Dokploy Compose stack.
+# Frontend (Next.js) is the only service exposed to Traefik; it proxies /api/* to the
+# backend over the internal network, so the backend is never publicly reachable.
+#
+# Dokploy wiring:
+#   - Set build-arg values + DOMAIN in the Compose "Environment" tab (see .env keys below).
+#   - Add the domain in the Compose "Domains" tab -> service: frontend, port: 3000, HTTPS/Let's Encrypt.
+#   - Backend runtime secrets live in ./backend/.env on the server (NOT committed).
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 8080
+    expose:
+      - "8080"
+    networks:
+      - grovyn
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* are inlined into the browser bundle at build time.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_CAL_COM_LINK: ${NEXT_PUBLIC_CAL_COM_LINK}
+        NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID}
+        NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL}
+        BACKEND_INTERNAL_URL: http://backend:8080
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    expose:
+      - "3000"
+    networks:
+      - grovyn
+      - dokploy-network
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/en').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  grovyn:
+    driver: bridge
+  # Traefik's network, created by Dokploy. Frontend joins it so the domain can reach :3000.
+  dokploy-network:
+    external: true
